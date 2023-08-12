@@ -226,3 +226,229 @@ person := struct {
     Age:  23,
 }
 ```
+
+## go:embed
+
+参考：[Go 1.16からリリースされたgo:embedとは](https://future-architect.github.io/articles/20210208/)
+
+embed はファイルをそのままビルドされたバイナリに埋め込み、ファイルや定数として扱える機能である。
+
+```sh
+# assets ディレクトリに data.go と hello.txt を配置
+$ ls -1 assets
+data.go
+hello.txt
+```
+
+data.go は下記の通り。コメントの「//go:embed hello.txt」が埋め込みファイルであり、次の HelloTextBytes が embed hello.txt を指すデータになる。
+
+```go
+// Package assets 埋め込みテキストデータ
+package assets
+
+import (
+	_ "embed"
+)
+
+//go:embed hello.txt
+var HelloTextBytes []byte
+```
+
+hello.txt は「Embed Hello World!」テキストを含むファイル。HelloTextBytes がこのテキストデータになる。
+
+```text
+Embed Hello World!
+```
+
+HelloTextBytes の使用例。
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"sample/go-basic-example/assets"
+)
+
+func main() {
+	fmt.Println(string(assets.HelloTextBytes))
+}
+```
+
+変数型を embed.FS にするとファイルとして扱うことができる。
+
+```go
+// Package assets 埋め込みテキストデータ
+package assets
+
+import "embed"
+
+//go:embed *.txt
+var EmbedFile embed.FS
+```
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"sample/go-basic-example/assets"
+)
+
+func main() {
+    // hello.txt をファイルとして読み込む
+	data, err := assets.EmbedFile.ReadFile("hello.txt")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(data))
+}
+```
+
+## Goroutine と Channel
+
+参考：[【Go言語入門】goroutineとは？ 実際に手を動かしながら goroutineの基礎を理解しよう！](https://www.ariseanalytics.com/activities/report/20221005/)  
+参考：[初心者がGo言語のcontextを爆速で理解する ~ cancel編　~](https://qiita.com/yoshinori_hisakawa/items/a6608b29059a945fbbbd)  
+参考：[Go言語でチャネルとselect](https://qiita.com/najeira/items/71a0bcd079c9066347b4)
+
+関数呼び出しの前に go を付けることで並行処理(goroutine)となる。
+
+```go
+package main
+
+import (
+  "fmt"
+)
+
+func Say(s string) {
+  fmt.Println(s)
+}
+
+func main() {
+  go Say("hello")
+  go Say("world")
+}
+```
+
+goroutine 間でデータのやりとりを行う場合は channel を使用する。
+
+```go
+package main
+
+import "fmt"
+
+func Say(s string, ch chan string) {
+    // channel にデータを入れる
+	ch <- s
+}
+
+func main() {
+    // channel の作成、扱うデータ型は string 型
+	ch := make(chan string)
+
+    go Say("hello", ch)
+	go Say("world", ch)
+
+	var ret string
+    // channel からデータを取り出す
+	ret = <-ch
+	fmt.Println(ret)
+    // channel からデータを取り出す
+	ret = <-ch
+	fmt.Println(ret)
+}
+```
+
+## Context
+
+Context を使用すると Channel を利用せずに簡単に goroutine 間で情報の伝達ができる。
+
+参考：[よくわかるcontextの使い方](https://zenn.dev/hsaki/books/golang-context)
+
+context を使用した値の受け渡しは goroutine セーフである。
+
+参考：[Goでスレッド（goroutine）セーフなプログラムを書くために必ず注意しなければいけない点](https://qiita.com/ruiu/items/54f0dbdec0d48082a5b1)
+
+context.WithValue() で値を設定し、ctx.Value() で取り出す。下記に例を示す。
+context.WithValue() の第２引数はキーであるが、独自の型定義をしないと Lint エラーとなる。また、context は関数の第１引数で渡さなければ、こちらも Lint エラーとなる。
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+)
+
+type myContextKey int
+
+const (
+	ContextKeyName myContextKey = iota
+)
+
+func Say(ctx context.Context, s string, ch chan string) {
+	// channel にデータを入れる
+	ch <- s + "+" + ctx.Value("name").(string)
+}
+
+func main() {
+	// channel の作成、扱うデータ型は string 型
+	ch := make(chan string)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ContextKeyName, "sample app")
+
+	go Say(ctx, "hello", ch)
+	go Say(ctx, "world", ch)
+
+	var ret string
+	// channel からデータを取り出す
+	ret = <-ch
+	fmt.Println(ret)
+	// channel からデータを取り出す
+	ret = <-ch
+	fmt.Println(ret)
+}
+```
+
+## Generics
+
+参考：[Goの標準ライブラリに学ぶジェネリクス](https://gihyo.jp/article/2023/05/tukinami-go-07)
+
+下記例の IntValue[T] 構造体は int、int32、int64 が利用できる。
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type IntValue[T int | int32 | int64] struct {
+	Value T
+}
+
+func NewIntValue[T int | int32 | int64](in T) IntValue[T] {
+	return IntValue[T]{
+		Value: in,
+	}
+}
+
+func (x *IntValue[T]) Add(v T) T {
+	x.Value = x.Value + v
+	return x.Value
+}
+
+func main() {
+	intval := NewIntValue[int](3)
+	fmt.Println(intval.Add(5))
+
+	int32val := NewIntValue[int32](3)
+	fmt.Println(int32val.Add(5))
+
+	int64val := NewIntValue[int64](3)
+	fmt.Println(int64val.Add(5))
+}
+```
