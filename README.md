@@ -479,10 +479,9 @@ func main() {
 参考：[[Golang] ファイル読み込みサンプル](https://qiita.com/tchnkmr/items/b686adc4a7e144d48755)  
 参考：[Goから学ぶI/O](https://zenn.dev/hsaki/books/golang-io-package/viewer/intro)
 
-ファイルを読み込む
+Reader / Writer のモデル図
 
-```go
-```
+![Reader / Writer のモデル図](img/connector.drawio.svg)
 
 以下、CSVファイルの読み書きサンプル。
 
