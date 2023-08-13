@@ -9,4 +9,7 @@ import (
 var HelloTextBytes []byte
 
 //go:embed *.txt
-var EmbedFile embed.FS
+var EmbedTextFile embed.FS
+
+//go:embed *.csv
+var EmbedCSVFile embed.FS

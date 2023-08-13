@@ -1,2 +1,4 @@
 .DS_Store
 /build
+/work/*
+!/work/.gitkeep

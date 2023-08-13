@@ -1,5 +1,7 @@
 # Go言語の基本
 
+参考：[A Tour of Go](https://go-tour-jp.appspot.com/welcome/1)
+
 ## Goプロジェクトの作成
 
 プロジェクトを配置するディレクトリを作成し、そのディレクトリをカレントディレクトリにして以下のコマンドを実行する。
@@ -285,7 +287,7 @@ package assets
 import "embed"
 
 //go:embed *.txt
-var EmbedFile embed.FS
+var EmbedTextFile embed.FS
 ```
 
 ```go
@@ -299,11 +301,376 @@ import (
 
 func main() {
     // hello.txt をファイルとして読み込む
-	data, err := assets.EmbedFile.ReadFile("hello.txt")
+	data, err := assets.EmbedTextFile.ReadFile("hello.txt")
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(string(data))
+}
+```
+
+## time
+
+参考：[【Go】now で日付操作](https://zenn.dev/shinshin/articles/b3c84d4bc71d3205b6f4)  
+参考：[Go で日付をフォーマットする場合は "2006-01-02" と書く](https://kakakakakku.hatenablog.com/entry/2016/03/28/001145)  
+参考：[Goでtime.Parseを使うときのタイムゾーンについて](https://blog.70-10.net/posts/go-time-parse/)  
+参考：[Goで時刻を扱うチートシート](https://zenn.dev/hsaki/articles/go-time-cheatsheet)
+
+Goでは時刻の文字列変換は "YYYY/MM/DD" ではなく、"2006/01/02" となる。
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	// 現在時刻
+	now := time.Now()
+	fmt.Println(now)
+
+	// 時刻から文字列
+	timestr := now.Format("2006/01/02 15:04:05")
+	fmt.Println(timestr)
+
+	// 文字列から時刻(UTC)
+	tm, err := time.Parse("2006/01/02 15:04:05", timestr)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tm)
+}
+```
+
+日本時間として時刻文字列を扱う場合は time.parseInLocation() を使用する。
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	// 現在時刻
+	now := time.Now()
+	fmt.Println(now)
+
+	// 時刻から文字列
+	timestr := now.Format("2006/01/02 15:04:05")
+	fmt.Println(timestr)
+
+	// 文字列から時刻(JST)
+	tm, err := time.ParseInLocation("2006/01/02 15:04:05", timestr, time.Local)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tm.Local())
+}
+```
+
+## Cast
+
+Go言語では、暗黙的な型変換は一切行われないため明示的に変換する必要がある。
+
+参考：[Goメモ-11 (明示的な型変換, Type conversions, Tour of Go)](https://devlights.hatenablog.com/entry/2019/10/30/104130)  
+参考：[Go言語の型変換(キャスト)方法についてまとめてみた](https://shiimanblog.com/engineering/golang-cast/#toc14)  
+参考：[go.Dev#Conversions](https://go.dev/ref/spec#Conversions)
+
+```go
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	// 文字列から数値(int)
+	{
+		var strVal string = "10"
+		intVal, _ := strconv.Atoi(strVal)
+		fmt.Printf("%T %v\n", intVal, intVal)
+	}
+
+	// 数値(int)から文字列
+	{
+		var intVal int = 10
+		strVal := strconv.Itoa(intVal)
+		fmt.Printf("%T %v\n", strVal, strVal)
+	}
+
+	// 文字列から数値(int32)
+	{
+		var strVal string = "10"
+		// int64に一旦変換
+		int64Val, _ := strconv.ParseInt(strVal, 10, 32)
+		int32Val := int32(int64Val)
+		fmt.Printf("%T %v\n", int32Val, int32Val)
+	}
+
+	// 数値(int32)から文字列
+	{
+		var int32Val int32 = 10
+		// int64に一旦変換
+		int64Val := int64(int32Val)
+		strVal := strconv.FormatInt(int64Val, 10)
+		fmt.Printf("%T %v\n", strVal, strVal)
+	}
+
+	// interface{} 型から文字列
+	{
+		var interStr interface{} = "Hello"
+		fmt.Printf("%T %v\n", interStr, interStr.(string))
+	}
+
+	// int から int32
+	{
+		var intVal int = 10
+		int32Val := int32(intVal)
+		fmt.Printf("%T %v\n", int32Val, int32Val)
+	}
+
+	// int32 から int
+	{
+		var int32Val int32 = 10
+		intVal := int(int32Val)
+		fmt.Printf("%T %v\n", intVal, intVal)
+	}
+
+	// int から int64
+	{
+		var intVal int = 10
+		int64Val := int64(intVal)
+		fmt.Printf("%T %v\n", int64Val, int64Val)
+	}
+
+	// int64 から int
+	{
+		var int64Val int64 = 10
+		intVal := int(int64Val)
+		fmt.Printf("%T %v\n", intVal, intVal)
+	}
+
+	// int から float
+	{
+		var intVal int = 10
+		floatVal := float64(intVal)
+		fmt.Printf("%T %v\n", floatVal, floatVal)
+	}
+
+	// float から int
+	{
+		var floatVal2 float64 = 10.1
+		intVal2 := int(floatVal2)
+		fmt.Printf("%T %v\n", intVal2, intVal2)
+	}
+}
+```
+
+## Steam
+
+ストリームは []byte に変換せずにストリームのまま扱うことを意識する。
+
+参考：[Goでのstreamの扱い方を学ぶ](https://christina04.hatenablog.com/entry/2017/01/06/190000)  
+参考：[[Golang] ファイル読み込みサンプル](https://qiita.com/tchnkmr/items/b686adc4a7e144d48755)  
+参考：[Goから学ぶI/O](https://zenn.dev/hsaki/books/golang-io-package/viewer/intro)
+
+ファイルを読み込む
+
+```go
+```
+
+以下、CSVファイルの読み書きサンプル。
+
+```go
+package main
+
+import (
+	"encoding/csv"
+	"io"
+	"os"
+	"sample/go-basic-example/assets"
+	"strings"
+)
+
+func main() {
+	// table.csv をファイルとして読み込む
+	fileReader, err := assets.EmbedCSVFile.Open("table.csv")
+	if err != nil {
+		panic(err)
+	}
+
+	// CSVファイルのReaderを作成
+	csvReader := csv.NewReader(fileReader)
+	csvReader.FieldsPerRecord = -1
+
+	// CSVファイルのWriterを作成
+	csvWriter := csv.NewWriter(os.Stdout)
+
+	// レコード単位で読み込み
+	for {
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		// スライスをコピー
+		copied := append([]string{}, record...)
+		// ２列目の値を大文字に変換
+		copied[1] = strings.ToUpper(copied[1])
+		// 書き込み
+		csvWriter.Write(copied)
+	}
+
+	// バッファを吐き出す
+	csvWriter.Flush()
+}
+```
+
+io.Pipe を使用する例。io.Pipe は [gorutine safe](https://pkg.go.dev/io#:~:text=It%20is%20safe%20to%20call%20Read%20and%20Write%20in%20parallel%20with%20each%20other%20or%20with%20Close.%20Parallel%20calls%20to%20Read%20and%20parallel%20calls%20to%20Write%20are%20also%20safe%3A%20the%20individual%20calls%20will%20be%20gated%20sequentially.)。
+
+参考：[Go言語のio.Pipeでファイルを効率よくアップロードする方法](https://medium.com/eureka-engineering/file-uploads-in-go-with-io-pipe-75519dfa647b)
+
+下記はテキストファイルを読み込み、すべての文字を大文字に変換して書き出すサンプルコード。
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+	"sample/go-basic-example/assets"
+	"strings"
+)
+
+func upperCaseFilterReader(r io.Reader) io.Reader {
+	pr, pw := io.Pipe()
+	go func() {
+		defer pw.Close()
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			// 1行ずつ読み込み
+			line := scanner.Text()
+			// 大文字に変換
+			upperCase := strings.ToUpper(line)
+			// pw に書き込むと、pr で読み込みされるまでブロックする
+			// そのため、goroutine で処理する必要がある
+			_, err := fmt.Fprintf(pw, "%s\n", upperCase)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}()
+	return pr
+}
+
+func main() {
+	// ファイルリーダーを作成
+	fileReader, err := assets.EmbedTextFile.Open("hello.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	// ファイルを読み込み大文字に変換する
+	filterReader := upperCaseFilterReader(fileReader)
+
+	// ファイルライターを作成
+	fileWriter, err := os.Create("./work/hello.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	// fileWriter に filterReader を接続する
+	// io.Copy は Reader と Writer を接続する
+	_, err = io.Copy(fileWriter, filterReader)
+	// fileWriter として os.Stdout を指定することもできる
+	// _, err = io.Copy(os.Stdout, filterReader)
+	if err != nil {
+		panic(err)
+	}
+}
+```
+
+## Unit Test
+
+VSCode の Go extention を使用すると、Unit Test のコードの雛形を自動生成することができる。  
+
+参考：[vscode で Go Generate Unit Test が便利だった](https://kenzo0107.github.io/2020/03/06/2020-03-07-vscode-go/)
+
+手順は以下の通り。
+
+1) Unit Test を作成したいテスト関数にカーソルを置く
+2) VSCode から Command + Shift + p でコマンドパレットを開く
+3) Go: Generate Unit Tests For Function を選択する
+
+例えば次のような関数の Unit Test を自動生成すると、
+
+```go
+// hello パッケージ内でのみ利用できる関数
+func hello(message string) string {
+	return "Hello " + message
+}
+```
+
+次のような Unit Test コードが作られる。
+
+```go
+package service
+
+import "testing"
+
+func Test_hello(t *testing.T) {
+	type args struct {
+		message string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hello(tt.args.message); got != tt.want {
+				t.Errorf("hello() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+```
+
+以下のように「// TODO: Add test cases.」の行にテストケースを記述する。
+
+```go
+package service
+
+import "testing"
+
+func Test_hello(t *testing.T) {
+	type args struct {
+		message string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"Test_Case_1", args{"World"}, "Hello World"},
+		{"Test_Case_2", args{"Golang"}, "Hello Golang"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hello(tt.args.message); got != tt.want {
+				t.Errorf("hello() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 ```
 

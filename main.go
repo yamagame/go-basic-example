@@ -12,7 +12,7 @@ func main() {
 
 	fmt.Println(string(assets.HelloTextBytes))
 
-	data, err := assets.EmbedFile.ReadFile("hello.txt")
+	data, err := assets.EmbedTextFile.ReadFile("hello.txt")
 	if err != nil {
 		panic(err)
 	}
