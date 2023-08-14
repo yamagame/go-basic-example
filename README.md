@@ -471,7 +471,7 @@ func main() {
 }
 ```
 
-## Steam
+## io.Reader / io.Writer
 
 ストリームは []byte に変換せずにストリームのまま扱うことを意識する。
 
@@ -479,7 +479,7 @@ func main() {
 参考：[[Golang] ファイル読み込みサンプル](https://qiita.com/tchnkmr/items/b686adc4a7e144d48755)  
 参考：[Goから学ぶI/O](https://zenn.dev/hsaki/books/golang-io-package/viewer/intro)
 
-Reader / Writer のモデル図
+Reader / Writer のモデル図。丸同士、三角同士に接続できる。
 
 ![Reader / Writer のモデル図](img/connector.drawio.svg)
 
@@ -724,6 +724,39 @@ func main() {
     // channel からデータを取り出す
 	ret = <-ch
 	fmt.Println(ret)
+}
+```
+
+[errgroup](https://pkg.go.dev/golang.org/x/sync/errgroup#example-Group-JustErrors) を使用した　goroutine のエラーハンドリングの例。
+
+```go
+import (
+	"fmt"
+	"net/http"
+
+	"golang.org/x/sync/errgroup"
+)
+
+func main() {
+	g := new(errgroup.Group)
+	var urls = []string{
+		"http://www.golang.org/",
+		"http://www.google.com/",
+		"http://www.somestupidname.com/",
+	}
+	for _, url := range urls {
+		url := url
+		g.Go(func() error {
+			resp, err := http.Get(url)
+			if err == nil {
+				resp.Body.Close()
+			}
+			return err
+		})
+	}
+	if err := g.Wait(); err == nil {
+		fmt.Println("Successfully fetched all URLs.")
+	}
 }
 ```
 
