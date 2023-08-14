@@ -766,12 +766,49 @@ Context を使用すると Channel を利用せずに簡単に goroutine 間で�
 
 参考：[よくわかるcontextの使い方](https://zenn.dev/hsaki/books/golang-context)
 
+下記サンプルはキャンセル処理の例である。5秒経つとキャンセルが実行され Goroutine が終了する。
+
+参考：[[Golang] コンテキスト：Golangでコンテキスト(Context)とは何者か説明してコンテキストを定義して使う方法について説明します。](https://dev-yakuza.posstree.com/golang/context/#:~:text=Golang%E3%81%A7%E3%82%B3%E3%83%B3%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88(Context)%E3%81%AF,%E5%88%B6%E5%BE%A1%E3%81%99%E3%82%8B%E3%81%9F%E3%82%81%E4%BD%BF%E3%81%84%E3%81%BE%E3%81%99%E3%80%82)
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+)
+
+func PrintTick(ctx context.Context) {
+	tick := time.Tick(time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Done:", ctx.Err())
+			return
+		case <-tick:
+			fmt.Println("tick")
+		}
+	}
+}
+
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go PrintTick(ctx)
+
+	time.Sleep(5 * time.Second)
+	cancel()
+}
+```
+
 context を使用した値の受け渡しは goroutine セーフである。
 
 参考：[Goでスレッド（goroutine）セーフなプログラムを書くために必ず注意しなければいけない点](https://qiita.com/ruiu/items/54f0dbdec0d48082a5b1)
 
-context.WithValue() で値を設定し、ctx.Value() で取り出す。下記に例を示す。
-context.WithValue() の第２引数はキーであるが、独自の型定義をしないと Lint エラーとなる。また、context は関数の第１引数で渡さなければ、こちらも Lint エラーとなる。
+context 経由で値の受け渡しもできる。context.WithValue() で値を設定し、ctx.Value() で取り出す。下記に例を示す。  
+context.WithValue() の第２引数はキーであるが、独自の型定義をしないと Lint エラーとなる。  
+また、context は関数の第１引数で渡さなければ、こちらも Lint エラーとなる。
 
 ```go
 package main
