@@ -483,6 +483,20 @@ Reader / Writer のモデル図。丸同士、三角同士に接続できる。
 
 ![Reader / Writer のモデル図](img/connector.drawio.svg)
 
+以下、io.Reader / io.Writer に対応しているパッケージの例。多くのパッケージが対応している。
+
+- [json](https://golang.org/pkg/encoding/json/)
+- [bytes.Buffer](https://golang.org/pkg/bytes/#Buffer)
+- [bufio.Reader](https://golang.org/pkg/bufio/#Reader)
+- [os.File](https://golang.org/pkg/os/#File)
+- [image](https://golang.org/pkg/image/#Decode)
+- [jpeg](https://golang.org/pkg/image/jpeg/)
+- [png](https://golang.org/pkg/image/png/)
+- [base64](https://golang.org/pkg/encoding/base64/)
+- [zlib](https://pkg.go.dev/compress/zlib)
+- [csv](https://pkg.go.dev/encoding/csv)
+- [xml](https://pkg.go.dev/encoding/xml)
+
 以下、CSVファイルの読み書きサンプル。
 
 ```go
