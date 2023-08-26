@@ -201,7 +201,9 @@ runnerptr := &Runner{
 }
 ```
 
-構造体にメソッドを作るにはレシーバを記述する。下記の例では (x *Person) の Person がレシーバ。レシーバには type で定義された型のみが使用できる。
+構造体にメソッドを作るにはレシーバを記述する。下記の例では (x *Person) の部分がレシーバ。レシーバには type で定義された型のみが使用できる。
+
+参考：[A Tour of Go / Methods](https://go-tour-jp.appspot.com/methods/1)
 
 ```go
 // Say パブリックメソッド
@@ -210,11 +212,13 @@ func (x *Person) Say(text string) string {
 }
 
 // プライベートメソッド(っぽいなにか、厳密には異なる)
+// 同じパッケージでは使用できる
 func (x *Person) say(text string) string {
     return x.Name + ":" + text
 }
 
 // SayAll クラスメソッド(っぽいなにか、厳密には異なる)
+// 自己参照しないことを明示的に宣言している
 func (Person) SayAll(text string) string {
     return "Person:" + text
 }
