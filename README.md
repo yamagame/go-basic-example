@@ -1,5 +1,6 @@
 # Go言語の基本
 
+参考：[How to GO](https://www.how2go.dev/)   
 参考：[A Tour of Go](https://go-tour-jp.appspot.com/welcome/1)
 
 ## Goプロジェクトの作成
